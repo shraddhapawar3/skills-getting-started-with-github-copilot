@@ -26,11 +26,54 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <p><strong>Participants:</strong></p>
-          <ul class="participants-list">
-            ${details.participants.map(participant => `<li>${participant}</li>`).join('')}
-          </ul>
         `;
 
+        // Create participants list
+        const ul = document.createElement('ul');
+        ul.className = 'participants-list';
+        ul.style.listStyleType = 'none'; // Hide bullet points
+        ul.style.paddingLeft = '0';
+
+        details.participants.forEach(participant => {
+          const li = document.createElement('li');
+          li.style.display = 'flex';
+          li.style.alignItems = 'center';
+
+          const span = document.createElement('span');
+          span.textContent = participant;
+          span.style.flexGrow = '1';
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.innerHTML = '&#128465;'; // Trash can icon
+          deleteBtn.title = 'Unregister';
+          deleteBtn.style.marginLeft = '8px';
+          deleteBtn.style.background = 'none';
+          deleteBtn.style.border = 'none';
+          deleteBtn.style.cursor = 'pointer';
+          deleteBtn.style.fontSize = '1.2em';
+
+          deleteBtn.addEventListener('click', async () => {
+            // Unregister participant via API
+            try {
+              const response = await fetch(`/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(participant)}`, {
+                method: 'POST',
+              });
+              if (response.ok) {
+                li.remove();
+              } else {
+                alert('Failed to unregister participant.');
+              }
+            } catch (error) {
+              alert('Error occurred while unregistering.');
+            }
+          });
+
+          li.appendChild(span);
+          li.appendChild(deleteBtn);
+          ul.appendChild(li);
+        });
+
+        activityCard.appendChild(ul);
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
@@ -66,6 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities list to show new participant
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
